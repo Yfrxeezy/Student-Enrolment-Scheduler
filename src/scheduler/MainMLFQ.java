@@ -2,13 +2,13 @@ package scheduler;
 
 import java.util.List;
 
-public class Main {
+public class MainMLFQ {
 
     public static void main(String[] args) {
 
-        //Creates the scheduler
-        RoundRobinScheduler scheduler =
-                new RoundRobinScheduler();
+        //Creates the RoundRobin scheduler
+        MLFQScheduler scheduler =
+                new MLFQScheduler();
 
         //Creates a new enrolment processes
         StudentEnrol p1 =
@@ -36,7 +36,7 @@ public class Main {
 
             System.out.println(
                     process.getProcessID()
-                    + " | COMPLETE"
+                            + " | COMPLETE"
             );
         }
     }

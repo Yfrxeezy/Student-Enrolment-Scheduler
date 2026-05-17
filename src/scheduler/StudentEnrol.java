@@ -32,7 +32,7 @@ public class StudentEnrol extends Thread {
     }
 }
 
-
+//Old methods used
 //    @Override
 //     public void run() {
 //        try {
