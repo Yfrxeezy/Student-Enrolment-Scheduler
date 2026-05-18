@@ -7,74 +7,55 @@ import java.util.Queue;
 
 public class RoundRobinScheduler {
 
-    //Queue holding processes
-    private Queue<StudentEnrol> processQueue;
+    //The set time given to each process during execution
+    private static final int TIME_SLICE = 20;
 
-    //Quantum time
-    private final int QUANTUM = 20;
+    //RoundRobin queue to store student enrolment processes
+    private final Queue<StudentEnrol> queue = new LinkedList<>();
 
-    //Constructor
-    public RoundRobinScheduler() {
-        processQueue = new LinkedList<>();
+    //Adds a new student process into the queue
+    public void addStudent(StudentEnrol student) {
+        queue.offer(student);
     }
+    //Executes the RoundRobin scheduling algorithm
+    public List<StudentEnrol> runEnrolment() {
 
-    //Add process to queue
-    public void enqueue(StudentEnrol process) {
-        processQueue.add(process);
-    }
+        //Creates a storage for completed student processes
+        List<StudentEnrol> completedStudents = new ArrayList<>();
 
-    //Remove process from queue
-    public StudentEnrol dequeue() {
-        return processQueue.poll();
-    }
+        //Continues while there are processes in the queue
+        while (!queue.isEmpty()) {
 
-    //Start enrolment scheduling
-    public List<StudentEnrol> startEnrolment() {
+            //Gets the next process into the queue
+            StudentEnrol current = queue.poll();
+            System.out.println("Running -> " + current.getProcessID());
 
-        //Completed process list
-        List<StudentEnrol> completedProcesses = new ArrayList<>();
-
-        //Continue while queue not empty
-        while (!processQueue.isEmpty()) {
-
-            //Get next process
-            StudentEnrol process = dequeue();
-
-            System.out.println("Running " + process.getProcessID());
+            //Stimulates the process running for one time slice
             try {
-                Thread.sleep(QUANTUM);
+                Thread.sleep(TIME_SLICE);
+
             } catch (InterruptedException e) {
-
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
 
-            process.setBurstTime(
-                    process.getBurstTime() - QUANTUM
-            );
+            //Reduces the remaining burst time by subtracting TIME_SLICE
+            int updatedTime = current.getBurstTime() - TIME_SLICE;
 
-            //Prevents negative values
-            if (process.getBurstTime() < 0) {
+            //Prevents any burst time to be less than 0
+            current.setBurstTime(Math.max(updatedTime, 0));
 
-                process.setBurstTime(0);
-            }
-
-            System.out.println(
-                    process.getProcessID() + " Remaining: " + process.getBurstTime() + "ms"
-            );
-
-            //If process is completed
-            if (process.getBurstTime() == 0) {
-
-                completedProcesses.add(process);
-
-                System.out.println(process.getProcessID() + " COMPLETE");
+            //Confirmation if the process has finished execution
+            if (current.getBurstTime() <= 0) {
+                completedStudents.add(current);
+                System.out.println(current.getProcessID() + " Finished.");
             } else {
-
                 //Puts the unfinished process back into the queue
-                enqueue(process);
+                queue.offer(current);
+                System.out.println(current.getProcessID() + " Remaining: " + current.getBurstTime() + "ms");
             }
         }
-        return completedProcesses;
+        //Returns the completed processes
+        return completedStudents;
     }
 }
 

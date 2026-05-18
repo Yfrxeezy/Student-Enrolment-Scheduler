@@ -6,79 +6,74 @@ import java.util.List;
 import java.util.Queue;
 
 public class MLFQScheduler {
-    //Young Queue
-    private Queue<StudentEnrol> youngQueue;
 
-    //Old Queue
-    private Queue<StudentEnrol> oldQueue;
+    //The set time given to each process during execution
+    private static final int TIME_SLICE = 20;
 
-    //Quantum time
-    private final int QUANTUM = 20;
+    //MLFQ Queue stores new and recently active processes
+    private final Queue<StudentEnrol> youngQueue = new LinkedList<>();
 
-    //Constructor
-    public MLFQScheduler() {
-        youngQueue = new LinkedList<>();
-        oldQueue = new LinkedList<>();
+    //MLFQ Queue stores older processes
+    private final Queue<StudentEnrol> oldQueue = new LinkedList<>();
+
+    //Adds a new student process into the younger queue
+    public void addStudent(StudentEnrol student) {
+        youngQueue.offer(student);
     }
 
-    //Adds a new process into the young queue
-    public void enqueue(StudentEnrol process) {
-        youngQueue.add(process);
-    }
+    //Executes the MLFQ scheduling algorithm
+    public List<StudentEnrol> runEnrolment() {
 
-    //Starts scheduling
-    public List<StudentEnrol> startEnrolment() {
-        List<StudentEnrol> complete = new ArrayList<>();
+        //Stores the completed student processes
+        List<StudentEnrol> completedStudents = new ArrayList<>();
 
+        //Continues the execution process while either queue still contains processes
         while(!youngQueue.isEmpty() || !oldQueue.isEmpty()) {
-            StudentEnrol process;
-            boolean cameFromYoung;
+            StudentEnrol current;
 
-            //Young Queue first
+            //Tracks which queue the process came from
+            boolean fromYoung;
+
+            //Young queue gets the priority first
             if (!youngQueue.isEmpty()) {
-                process = youngQueue.poll();
-
-                cameFromYoung = true;
-
-                System.out.println("Running Young process: " + process.getProcessID());
-
+                current = youngQueue.poll();
+                fromYoung = true;
+                System.out.println("\nYoung Queue -> " + current.getProcessID());
             } else {
-                process = oldQueue.poll();
-
-                cameFromYoung = false;
-
-                System.out.println("Running Old process: " + process.getProcessID());
+                current = oldQueue.poll();
+                fromYoung = false;
+                System.out.println("\nOld Queue -> " + current.getProcessID());
             }
+            //Stimulates the process running for one time slice
             try {
-                Thread.sleep(QUANTUM);
+                Thread.sleep(TIME_SLICE);
+
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
 
-            //Reduces the burst time
-            process.setBurstTime(process.getBurstTime() - QUANTUM);
+            //Reduces the remaining burst time by subtracting TIME_SLICE
+            int updatedTime = current.getBurstTime() - TIME_SLICE;
 
-            //Prevents negative values
-            if (process.getBurstTime() < 0) {
-                process.setBurstTime(0);
-            }
-            System.out.println(process.getProcessID() + " Remaining: " + process.getBurstTime());
+            //Prevents any burst time to be less than 0
+            current.setBurstTime(Math.max(updatedTime, 0));
 
-            //Complete Process
-            if (process.getBurstTime() == 0) {
+            System.out.println(current.getProcessID() + " Remaining: " + current.getBurstTime() + "ms");
 
-                complete.add(process);
-
-                System.out.println(process.getProcessID() + " COMPLETE");
+            //Confirmation if the process has finished execution
+            if (current.getBurstTime() == 0) {
+                completedStudents.add(current);
+                System.out.println(current.getProcessID() + " Finished.");
             } else {
-                //moves process to the opposite queue
-                if (cameFromYoung) {
-                    oldQueue.add(process);
+                //Moves the unfinished process to the opposite side of the queue
+                if (fromYoung) {
+                    oldQueue.offer(current);
                 } else {
-                    youngQueue.add(process);
+                    youngQueue.offer(current);
                 }
             }
         }
-        return complete;
+        //Returns the completed processes
+        return completedStudents;
     }
 }
